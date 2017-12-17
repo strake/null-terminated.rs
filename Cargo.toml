@@ -7,4 +7,4 @@ license = "MIT OR Apache-2.0"
 
 [dependencies]
 fallible = "0.1"
-idem = "0.3"
+idem = "0.3.1"
