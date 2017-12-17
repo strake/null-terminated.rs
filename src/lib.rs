@@ -175,3 +175,10 @@ fn ptr_diff<A>(p: *const A, q: *const A) -> usize {
     use ::core::num::Wrapping as w;
     (w(p as usize) - w(q as usize)).0/mem::size_of::<A>()
 }
+
+#[macro_export]
+macro_rules! str0 {
+    ($s:tt) => (unsafe {
+        $crate::Nul::<u8>::new_unchecked_mut(concat!($s, "\0").as_ptr() as *mut _)
+    })
+}
