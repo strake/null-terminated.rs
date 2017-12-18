@@ -21,10 +21,10 @@ pub struct Nul<A>([A; 0], Opaque);
 
 impl<A> Nul<A> {
     #[inline]
-    pub const fn as_ptr(&self) -> *const A { &self.0[0] as *const A as *mut A }
+    pub const fn as_ptr(&self) -> *const A { self as *const Self as *const A }
 
     #[inline]
-    pub fn as_mut_ptr(&mut self) -> *mut A { &mut self.0[0] as *mut A }
+    pub fn as_mut_ptr(&mut self) -> *mut A { self as *mut Self as *mut A }
 
     #[inline]
     pub const fn iter(&self) -> Iter<A> { Iter(self.as_ptr(), PhantomData) }
