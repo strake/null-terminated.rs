@@ -33,6 +33,11 @@ impl<A> Nul<A> {
     pub fn iter_mut(&mut self) -> IterMut<A> { IterMut(self.as_mut_ptr(), PhantomData) }
 
     #[inline]
+    pub unsafe fn new_unchecked(p: *const A) -> &'static Nul<A> {
+        Self::new_unchecked_mut(p as _)
+    }
+
+    #[inline]
     pub unsafe fn new_unchecked_mut(p: *mut A) -> &'static mut Nul<A> {
         &mut *(p as *mut Nul<A>)
     }
