@@ -131,7 +131,7 @@ impl<'a, A: Zero> IntoIterator for &'a mut Nul<A> {
     fn into_iter(self) -> IterMut<'a, A> { self.iter_mut() }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Copy)]
 pub struct Iter<'a, A: 'a>(*const A, PhantomData<&'a A>);
 
 unsafe impl<'a, T: Sync> Send for Iter<'a, T> {}
