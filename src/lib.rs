@@ -202,11 +202,16 @@ mod tests {
     use super::*;
 
     #[quickcheck]
-    fn test(mut xs: ::std::vec::Vec<usize>) {
+    fn test(mut xs: ::std::vec::Vec<usize>) -> bool {
         xs.push(0);
         let l = xs.iter().take_while(|&&x| 0usize != x).count();
-        let ys = <&Nul<_>>::try_from(&xs[..]).unwrap();
-        eprintln!("{:?} ≟ {:?}", xs, ys);
-        assert_eq!(xs[0..l], <&Nul<_>>::try_from(&xs[..]).unwrap()[..]);
+        xs[0..l] == <&Nul<_>>::try_from(&xs[..]).unwrap()[..]
+    }
+
+    #[quickcheck]
+    fn iter(mut xs: ::std::vec::Vec<usize>) -> bool {
+        xs.push(0);
+        let l = xs.iter().take_while(|&&x| 0usize != x).count();
+        Iterator::eq(xs.iter().take(l), <&Nul<_>>::try_from(&xs[..]).unwrap().iter())
     }
 }
