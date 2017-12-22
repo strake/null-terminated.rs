@@ -3,8 +3,17 @@
 #![feature(const_fn)]
 #![feature(extern_types)]
 
+#![cfg_attr(test, feature(custom_attribute))]
+#![cfg_attr(test, feature(plugin))]
+
+#![cfg_attr(test, plugin(quickcheck_macros))]
+
 extern crate fallible;
 extern crate idem;
+
+#[cfg(test)] extern crate quickcheck;
+#[cfg(test)] #[macro_use]
+             extern crate std;
 
 use core::cmp::*;
 use core::fmt::{self, Debug, Display};
@@ -186,4 +195,18 @@ macro_rules! str0 {
     ($s:tt) => (unsafe {
         $crate::Nul::<u8>::new_unchecked_mut(concat!($s, "\0").as_ptr() as *mut _)
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[quickcheck]
+    fn test(mut xs: ::std::vec::Vec<usize>) {
+        xs.push(0);
+        let l = xs.iter().take_while(|&&x| 0usize != x).count();
+        let ys = <&Nul<_>>::try_from(&xs[..]).unwrap();
+        eprintln!("{:?} ≟ {:?}", xs, ys);
+        assert_eq!(xs[0..l], <&Nul<_>>::try_from(&xs[..]).unwrap()[..]);
+    }
 }
