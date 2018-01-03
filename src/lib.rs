@@ -9,7 +9,6 @@
 #![cfg_attr(test, plugin(quickcheck_macros))]
 
 extern crate fallible;
-extern crate idem;
 
 #[cfg(test)] extern crate quickcheck;
 #[cfg(test)] #[macro_use]
@@ -22,7 +21,6 @@ use core::mem;
 use core::ops::*;
 use core::slice;
 use fallible::*;
-use idem::dec::Zero;
 
 extern { type Opaque; }
 
@@ -50,14 +48,12 @@ impl<A> Nul<A> {
     pub unsafe fn new_unchecked_mut(p: *mut A) -> &'static mut Nul<A> {
         &mut *(p as *mut Nul<A>)
     }
-}
 
-impl<A: Zero> Nul<A> {
     #[inline]
     pub fn len(&self) -> usize { unsafe {
         if 0 == mem::size_of::<A>() { return 0; }
         let mut p = self.as_ptr();
-        while !(*p).is_zero() { p = p.offset(1); }
+        while !is_null(&*p) { p = p.offset(1); }
         ptr_diff(p, self.as_ptr())
     } }
 
@@ -66,9 +62,34 @@ impl<A: Zero> Nul<A> {
 
     #[inline]
     pub fn get_mut(&mut self, i: usize) -> Option<&mut A> { self[..].get_mut(i) }
+
+    #[inline]
+    pub fn split_at(&self, i: usize) -> (&[A], &Self) {
+        self.try_split_at(i).expect("index out of bounds")
+    }
+
+    #[inline]
+    pub fn split_at_mut(&mut self, i: usize) -> (&mut [A], &mut Self) {
+        self.try_split_at_mut(i).expect("index out of bounds")
+    }
+
+    #[inline]
+    pub fn try_split_at(&self, i: usize) -> Option<(&[A], &Self)> {
+        let mut it = self.iter();
+        for _ in 0..i { if let None = it.next() { return None; } }
+        Some(unsafe { (slice::from_raw_parts(self.as_ptr(), i), <&Self>::from(it)) })
+    }
+
+    #[inline]
+    pub fn try_split_at_mut(&mut self, i: usize) -> Option<(&mut [A], &mut Self)> {
+        let p = self.as_mut_ptr();
+        let mut it = self.iter_mut();
+        for _ in 0..i { if let None = it.next() { return None; } }
+        Some(unsafe { (slice::from_raw_parts_mut(p, i), <&mut Self>::from(it)) })
+    }
 }
 
-impl<A: Zero, I> Index<I> for Nul<A> where [A]: Index<I> {
+impl<A, I> Index<I> for Nul<A> where [A]: Index<I> {
     type Output = <[A] as Index<I>>::Output;
     #[inline]
     fn index(&self, i: I) -> &Self::Output {
@@ -76,64 +97,63 @@ impl<A: Zero, I> Index<I> for Nul<A> where [A]: Index<I> {
     }
 }
 
-impl<A: Zero, I> IndexMut<I> for Nul<A> where [A]: IndexMut<I> {
+impl<A, I> IndexMut<I> for Nul<A> where [A]: IndexMut<I> {
     #[inline]
     fn index_mut(&mut self, i: I) -> &mut Self::Output {
         unsafe { slice::from_raw_parts_mut(self.as_mut_ptr(), self.len()).index_mut(i) }
     }
 }
 
-impl<A: Zero + Debug> Debug for Nul<A> {
+impl<A: Debug> Debug for Nul<A> {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result { self[..].fmt(f) }
 }
 
-impl<A: Zero + PartialEq> PartialEq for Nul<A> {
+impl<A: PartialEq> PartialEq for Nul<A> {
     #[inline]
     fn eq(&self, other: &Self) -> bool { self[..] == other[..] }
 }
 
-impl<A: Zero + Eq> Eq for Nul<A> {}
+impl<A: Eq> Eq for Nul<A> {}
 
-impl<A: Zero + PartialOrd> PartialOrd for Nul<A> {
+impl<A: PartialOrd> PartialOrd for Nul<A> {
     #[inline]
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         <[A]>::partial_cmp(&self[..], &other[..])
     }
 }
 
-impl<A: Zero + Ord> Ord for Nul<A> {
+impl<A: Ord> Ord for Nul<A> {
     #[inline]
     fn cmp(&self, other: &Self) -> Ordering { <[A]>::cmp(&self[..], &other[..]) }
 }
 
-impl<'a, A: Zero> TryFrom<&'a [A]> for &'a Nul<A> {
+impl<'a, A> TryFrom<&'a [A]> for &'a Nul<A> {
     type Error = ();
     #[inline]
     fn try_from(xs: &'a [A]) -> Result<Self, ()> {
-        if xs.last().map(A::is_zero).unwrap_or(false) { Ok(unsafe { mem::transmute(&xs[0]) }) }
+        if xs.last().map_or(false, is_null) { Ok(unsafe { mem::transmute(&xs[0]) }) }
         else { Err(()) }
     }
 }
 
-impl<'a, A: Zero> TryFrom<&'a mut [A]> for &'a mut Nul<A> {
+impl<'a, A> TryFrom<&'a mut [A]> for &'a mut Nul<A> {
     type Error = ();
     #[inline]
     fn try_from(xs: &'a mut [A]) -> Result<Self, ()> {
-        if xs.last().map(A::is_zero).unwrap_or(false) {
-            Ok(unsafe { mem::transmute(&mut xs[0]) })
-        } else { Err(()) }
+        if xs.last().map_or(false, is_null) { Ok(unsafe { mem::transmute(&mut xs[0]) }) }
+        else { Err(()) }
     }
 }
 
-impl<'a, A: Zero> IntoIterator for &'a Nul<A> {
+impl<'a, A> IntoIterator for &'a Nul<A> {
     type Item = &'a A;
     type IntoIter = Iter<'a, A>;
     #[inline]
     fn into_iter(self) -> Iter<'a, A> { self.iter() }
 }
 
-impl<'a, A: Zero> IntoIterator for &'a mut Nul<A> {
+impl<'a, A> IntoIterator for &'a mut Nul<A> {
     type Item = &'a mut A;
     type IntoIter = IterMut<'a, A>;
     #[inline]
@@ -146,11 +166,11 @@ pub struct Iter<'a, A: 'a>(*const A, PhantomData<&'a A>);
 unsafe impl<'a, T: Sync> Send for Iter<'a, T> {}
 unsafe impl<'a, T: Sync> Sync for Iter<'a, T> {}
 
-impl<'a, A: 'a + Zero> Iterator for Iter<'a, A> {
+impl<'a, A: 'a> Iterator for Iter<'a, A> {
     type Item = &'a A;
     #[inline]
     fn next(&mut self) -> Option<&'a A> { unsafe {
-        if (*self.0).is_zero() { None } else {
+        if is_null(&*self.0) { None } else {
             let ptr = self.0;
             self.0 = ptr.offset(1);
             Some(&*ptr)
@@ -163,11 +183,11 @@ pub struct IterMut<'a, A: 'a>(*mut A, PhantomData<&'a mut A>);
 unsafe impl<'a, T: Send> Send for IterMut<'a, T> {}
 unsafe impl<'a, T: Sync> Sync for IterMut<'a, T> {}
 
-impl<'a, A: 'a + Zero> Iterator for IterMut<'a, A> {
+impl<'a, A: 'a> Iterator for IterMut<'a, A> {
     type Item = &'a mut A;
     #[inline]
     fn next(&mut self) -> Option<&'a mut A> { unsafe {
-        if (*self.0).is_zero() { None } else {
+        if is_null(&*self.0) { None } else {
             let ptr = self.0;
             self.0 = ptr.offset(1);
             Some(&mut *ptr)
@@ -183,6 +203,13 @@ impl Display for Nul<char> {
         Ok(())
     }
 }
+
+#[inline]
+fn is_null<A>(a: &A) -> bool { unsafe {
+    let l = mem::size_of_val(a);
+    let p = a as *const A as *const u8;
+    slice::from_raw_parts(p, l).iter().all(|&b| 0 == b)
+} }
 
 #[inline]
 fn ptr_diff<A>(p: *const A, q: *const A) -> usize {
