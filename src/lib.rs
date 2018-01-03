@@ -160,6 +160,16 @@ impl<'a, A> IntoIterator for &'a mut Nul<A> {
     fn into_iter(self) -> IterMut<'a, A> { self.iter_mut() }
 }
 
+impl<'a, A> From<Iter<'a, A>> for &'a Nul<A> {
+    #[inline]
+    fn from(it: Iter<'a, A>) -> Self { unsafe { &*(it.0 as *const Nul<A>) } }
+}
+
+impl<'a, A> From<IterMut<'a, A>> for &'a mut Nul<A> {
+    #[inline]
+    fn from(it: IterMut<'a, A>) -> Self { unsafe { &mut *(it.0 as *mut Nul<A>) } }
+}
+
 #[derive(Clone, Copy)]
 pub struct Iter<'a, A: 'a>(*const A, PhantomData<&'a A>);
 
