@@ -214,6 +214,8 @@ impl Display for Nul<char> {
     }
 }
 
+impl<A> AsRef<Nul<A>> for Nul<A> { #[inline] fn as_ref(&self) -> &Self { self } }
+
 #[inline]
 fn is_null<A>(a: &A) -> bool { unsafe {
     let l = mem::size_of_val(a);
