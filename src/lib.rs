@@ -2,6 +2,7 @@
 
 #![feature(const_fn)]
 #![feature(extern_types)]
+#![feature(untagged_unions)]
 
 #![cfg_attr(test, feature(custom_attribute))]
 #![cfg_attr(test, feature(plugin))]
@@ -40,8 +41,9 @@ impl<A> Nul<A> {
     pub fn iter_mut(&mut self) -> IterMut<A> { IterMut(self.as_mut_ptr(), PhantomData) }
 
     #[inline]
-    pub unsafe fn new_unchecked(p: *const A) -> &'static Nul<A> {
-        Self::new_unchecked_mut(p as _)
+    pub const unsafe fn new_unchecked(p: *const A) -> &'static Nul<A> {
+        union U<A: 'static> { p: *const A, q: &'static Nul<A> }
+        U { p }.q
     }
 
     #[inline]
