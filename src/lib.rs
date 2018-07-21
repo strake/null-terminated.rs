@@ -231,7 +231,7 @@ fn ptr_diff<A>(p: *const A, q: *const A) -> usize {
 
 #[macro_export]
 macro_rules! str0 {
-    ($s:expr) => (unsafe {
+    ($s:expr) => (#[allow(unused_unsafe)] unsafe {
         $crate::Nul::<u8>::new_unchecked_mut(concat!($s, "\0").as_ptr() as *mut _)
     })
 }
