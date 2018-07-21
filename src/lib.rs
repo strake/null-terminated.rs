@@ -257,6 +257,82 @@ impl Display for Nul<char> {
 
 impl<A> AsRef<Nul<A>> for Nul<A> { #[inline] fn as_ref(&self) -> &Self { self } }
 
+#[derive(PartialEq, Eq, PartialOrd, Ord)]
+pub struct NulStr(Nul<u8>);
+
+impl Debug for NulStr {
+    #[inline]
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result { write!(fmt, "{:?}", &self[..]) }
+}
+
+impl Index<RangeFull> for NulStr {
+    type Output = str;
+
+    #[inline]
+    fn index(&self, _: RangeFull) -> &str { unsafe {
+        ::core::str::from_utf8_unchecked(&self.0[..])
+    } }
+}
+
+impl IndexMut<RangeFull> for NulStr {
+    #[inline]
+    fn index_mut(&mut self, _: RangeFull) -> &mut str { unsafe {
+        ::core::str::from_utf8_unchecked_mut(&mut self.0[..])
+    } }
+}
+
+impl NulStr {
+    #[inline]
+    pub const unsafe fn new_unchecked(p: *const u8) -> &'static Self {
+        union U<A: 'static> { p: *const A, q: &'static NulStr }
+        U { p }.q
+    }
+
+    #[inline]
+    pub unsafe fn new_unchecked_mut(p: *mut u8) -> &'static mut Self { &mut *(p as *mut Self) }
+
+    #[inline]
+    pub fn as_bytes(&self) -> &Nul<u8> { &self.0 }
+
+    #[inline]
+    pub fn as_bytes_mut(&mut self) -> &mut Nul<u8> { &mut self.0 }
+
+    #[inline]
+    pub fn as_ptr(&self) -> *const u8 { self.0.as_ptr() }
+
+    #[inline]
+    pub fn as_mut_ptr(&mut self) -> *const u8 { self.0.as_mut_ptr() }
+
+    #[inline]
+    pub fn chars(&self) -> ::core::str::Chars { self[..].chars() }
+
+    #[inline]
+    pub fn char_indices(&self) -> ::core::str::CharIndices { self[..].char_indices() }
+
+    #[inline]
+    pub fn is_char_boundary(&self, k: usize) -> bool { self[..].is_char_boundary(k) }
+}
+
+impl<'a> TryFrom<&'a Nul<u8>> for &'a NulStr {
+    type Error = ::core::str::Utf8Error;
+
+    #[inline]
+    fn try_from(s: &'a Nul<u8>) -> Result<Self, Self::Error> {
+        ::core::str::from_utf8(&s[..])?;
+        Ok(unsafe { NulStr::new_unchecked(s.as_ptr()) })
+    }
+}
+
+impl<'a> TryFrom<&'a mut Nul<u8>> for &'a mut NulStr {
+    type Error = ::core::str::Utf8Error;
+
+    #[inline]
+    fn try_from(s: &'a mut Nul<u8>) -> Result<Self, Self::Error> {
+        ::core::str::from_utf8_mut(&mut s[..])?;
+        Ok(unsafe { NulStr::new_unchecked_mut(s.as_mut_ptr()) })
+    }
+}
+
 #[inline]
 fn is_null<A>(a: &A) -> bool { unsafe {
     let l = mem::size_of_val(a);
@@ -283,6 +359,22 @@ fn ptr_diff<A>(p: *const A, q: *const A) -> usize {
 macro_rules! str0 {
     ($s:expr) => (unsafe {
         $crate::Nul::<u8>::new_unchecked(concat!($s, "\0").as_ptr() as *mut _)
+    })
+}
+
+/// Make a static `NulStr`.
+///
+/// # Examples
+///
+/// ```
+/// # #![feature(const_str_as_ptr)] #[macro_use] extern crate null_terminated; use null_terminated::NulStr; fn main() {
+/// static s: &'static NulStr = str0_utf8!("Hello, world!");
+/// # }
+/// ```
+#[macro_export]
+macro_rules! str0_utf8 {
+    ($s:expr) => (unsafe {
+        $crate::NulStr::new_unchecked(concat!($s, "\0").as_ptr() as *mut _)
     })
 }
 
