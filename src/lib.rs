@@ -24,6 +24,8 @@ use core::slice;
 use fallible::*;
 
 extern { type Opaque; }
+unsafe impl Send for Opaque {}
+unsafe impl Sync for Opaque {}
 
 pub struct Nul<A>([A; 0], Opaque);
 
