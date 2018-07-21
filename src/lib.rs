@@ -1,3 +1,5 @@
+//! See [`Nul`](struct.Nul.html).
+
 #![no_std]
 
 #![feature(const_fn)]
@@ -27,6 +29,24 @@ extern { type Opaque; }
 unsafe impl Send for Opaque {}
 unsafe impl Sync for Opaque {}
 
+/// Generic unsized null-terminated array
+///
+/// `&Nul<A>` is a thin pointer, so it can be readily used with FFI.
+///
+/// # Examples
+///
+/// One can safely take views of null-terminated slices with [`TryFrom::try_from`](../fallible/trait.TryFrom.html#tymethod.try_from):
+/// ```
+/// # extern crate fallible; extern crate null_terminated; use null_terminated::Nul;
+/// extern "C" {
+///     fn c_f(path: *const u8) -> i32;
+/// }
+///
+/// fn f(path: &[u8]) -> Result<i32, ()> {
+///     <&Nul<u8> as ::fallible::TryFrom<_>>::try_from(path)
+///         .map(|path| unsafe { c_f(path.as_ptr()) })
+/// }
+/// ```
 pub struct Nul<A>([A; 0], Opaque);
 
 impl<A> Nul<A> {
@@ -36,9 +56,11 @@ impl<A> Nul<A> {
     #[inline]
     pub fn as_mut_ptr(&mut self) -> *mut A { self as *mut Self as *mut A }
 
+    /// Iterate over array elements.
     #[inline]
     pub const fn iter(&self) -> Iter<A> { Iter(self.as_ptr(), PhantomData) }
 
+    /// Iterate over array elements, mutably.
     #[inline]
     pub fn iter_mut(&mut self) -> IterMut<A> { IterMut(self.as_mut_ptr(), PhantomData) }
 
@@ -53,6 +75,7 @@ impl<A> Nul<A> {
         &mut *(p as *mut Nul<A>)
     }
 
+    /// Return array length. `O(n)`
     #[inline]
     pub fn len(&self) -> usize { unsafe {
         if 0 == mem::size_of::<A>() { return 0; }
@@ -61,22 +84,35 @@ impl<A> Nul<A> {
         ptr_diff(p, self.as_ptr())
     } }
 
+    /// Get element at given position. `O(n)` to check bounds
     #[inline]
     pub fn get(&self, i: usize) -> Option<&A> { self[..].get(i) }
 
+    /// Get element at given position, mutably. `O(n)` to check bounds
     #[inline]
     pub fn get_mut(&mut self, i: usize) -> Option<&mut A> { self[..].get_mut(i) }
 
+    /// Split array at given position.
+    ///
+    /// # Panics
+    ///
+    /// Panics if index out of bounds.
     #[inline]
     pub fn split_at(&self, i: usize) -> (&[A], &Self) {
         self.try_split_at(i).expect("index out of bounds")
     }
 
+    /// Split array at given position, mutably.
+    ///
+    /// # Panics
+    ///
+    /// Panics if index out of bounds.
     #[inline]
     pub fn split_at_mut(&mut self, i: usize) -> (&mut [A], &mut Self) {
         self.try_split_at_mut(i).expect("index out of bounds")
     }
 
+    /// Split array at given position; return `None` if index out of bounds.
     #[inline]
     pub fn try_split_at(&self, i: usize) -> Option<(&[A], &Self)> {
         let mut it = self.iter();
@@ -84,6 +120,7 @@ impl<A> Nul<A> {
         Some(unsafe { (slice::from_raw_parts(self.as_ptr(), i), <&Self>::from(it)) })
     }
 
+    /// Split array at given position, mutably; return `None` if index out of bounds.
     #[inline]
     pub fn try_split_at_mut(&mut self, i: usize) -> Option<(&mut [A], &mut Self)> {
         let p = self.as_mut_ptr();
@@ -233,6 +270,15 @@ fn ptr_diff<A>(p: *const A, q: *const A) -> usize {
     (w(p as usize) - w(q as usize)).0/mem::size_of::<A>()
 }
 
+/// Make a static `Nul<u8>`.
+///
+/// # Examples
+///
+/// ```
+/// # #![feature(const_str_as_ptr)] #[macro_use] extern crate null_terminated; use null_terminated::Nul; fn main() {
+/// static s: &'static Nul<u8> = str0!("Hello, world!");
+/// # }
+/// ```
 #[macro_export]
 macro_rules! str0 {
     ($s:expr) => (#[allow(unused_unsafe)] unsafe {
