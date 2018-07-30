@@ -14,6 +14,10 @@
 #![cfg_attr(test, plugin(quickcheck_macros))]
 
 extern crate fallible;
+extern crate unreachable;
+
+#[cfg(feature = "utf")]
+extern crate utf;
 
 #[cfg(test)] extern crate quickcheck;
 #[cfg(test)] #[macro_use]
@@ -271,6 +275,16 @@ impl Debug for NulStr {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result { write!(fmt, "{:?}", &self[..]) }
 }
 
+#[cfg(feature = "utf")]
+impl fmt::Display for NulStr {
+    #[inline]
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        use fmt::Write;
+        for x in self.chars() { fmt.write_char(x)? }
+        Ok(())
+    }
+}
+
 impl Index<RangeFull> for NulStr {
     type Output = str;
 
@@ -310,13 +324,39 @@ impl NulStr {
     pub fn as_mut_ptr(&mut self) -> *const u8 { self.0.as_mut_ptr() }
 
     #[inline]
-    pub fn chars(&self) -> ::core::str::Chars { self[..].chars() }
+    pub fn chars(&self) -> Chars { Chars(::utf::decode_utf8(self.0.iter().cloned())) }
 
     #[inline]
-    pub fn char_indices(&self) -> ::core::str::CharIndices { self[..].char_indices() }
+    pub fn char_indices(&self) -> CharIndices { CharIndices(self.chars(), 0) }
 
     #[inline]
     pub fn is_char_boundary(&self, k: usize) -> bool { self[..].is_char_boundary(k) }
+}
+
+#[derive(Debug, Clone)]
+pub struct Chars<'a>(::utf::DecodeUtf8<::core::iter::Cloned<Iter<'a, u8>>>);
+
+impl<'a> Iterator for Chars<'a> {
+    type Item = char;
+    #[inline]
+    fn next(&mut self) -> Option<char> {
+        use unreachable::UncheckedResultExt;
+        self.0.next().map(|r| unsafe { r.unchecked_unwrap_ok() })
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct CharIndices<'a>(Chars<'a>, usize);
+
+impl<'a> Iterator for CharIndices<'a> {
+    type Item = (usize, char);
+    #[inline]
+    fn next(&mut self) -> Option<(usize, char)> {
+        let x = self.0.next()?;
+        let k = self.1;
+        self.1 += x.len_utf8();
+        Some((k, x))
+    }
 }
 
 impl<'a> TryFrom<&'a Nul<u8>> for &'a NulStr {

@@ -7,7 +7,12 @@ license = "MIT OR Apache-2.0"
 
 [dependencies]
 fallible = "0.1"
+unreachable = "1"
+utf = { version = "0.1", optional = true }
 
 [dev-dependencies]
 quickcheck = "0.6"
 quickcheck_macros = "0.6"
+
+[features]
+default = ["utf"]
