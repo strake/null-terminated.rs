@@ -47,6 +47,7 @@ unsafe impl Sync for Opaque {}
 ///         .map(|path| unsafe { c_f(path.as_ptr()) })
 /// }
 /// ```
+#[repr(C)]
 pub struct Nul<A>([A; 0], Opaque);
 
 impl<A> Nul<A> {
@@ -258,6 +259,7 @@ impl Display for Nul<char> {
 impl<A> AsRef<Nul<A>> for Nul<A> { #[inline] fn as_ref(&self) -> &Self { self } }
 
 #[derive(PartialEq, Eq, PartialOrd, Ord)]
+#[repr(transparent)]
 pub struct NulStr(Nul<u8>);
 
 impl Debug for NulStr {
