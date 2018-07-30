@@ -2,6 +2,8 @@
 
 #![no_std]
 
+#![deny(missing_debug_implementations)]
+
 #![feature(const_fn)]
 #![feature(extern_types)]
 #![feature(untagged_unions)]
@@ -213,7 +215,7 @@ impl<'a, A> From<IterMut<'a, A>> for &'a mut Nul<A> {
     fn from(it: IterMut<'a, A>) -> Self { unsafe { &mut *(it.0 as *mut Nul<A>) } }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 pub struct Iter<'a, A: 'a>(*const A, PhantomData<&'a A>);
 
 unsafe impl<'a, T: Sync> Send for Iter<'a, T> {}
@@ -231,6 +233,7 @@ impl<'a, A: 'a> Iterator for Iter<'a, A> {
     } }
 }
 
+#[derive(Debug)]
 pub struct IterMut<'a, A: 'a>(*mut A, PhantomData<&'a mut A>);
 
 unsafe impl<'a, T: Send> Send for IterMut<'a, T> {}
