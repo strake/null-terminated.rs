@@ -17,12 +17,8 @@ extern crate fallible;
 #[cfg(test)] #[macro_use]
              extern crate std;
 
-use core::cmp::*;
-use core::fmt::{self, Debug, Display};
-use core::marker::PhantomData;
-use core::mem;
-use core::ops::*;
-use core::slice;
+use core::{cmp::*, fmt::{self, Debug, Display}, hash::{Hash, Hasher}, marker::PhantomData, mem,
+           ops::*, slice};
 use fallible::*;
 
 extern { type Opaque; }
@@ -170,6 +166,11 @@ impl<A: Ord> Ord for Nul<A> {
     fn cmp(&self, other: &Self) -> Ordering { <[A]>::cmp(&self[..], &other[..]) }
 }
 
+impl<A: Hash> Hash for Nul<A> {
+    #[inline]
+    fn hash<H: Hasher>(&self, h: &mut H) { self.iter().for_each(|a| a.hash(h)) }
+}
+
 impl<'a, A> TryFrom<&'a [A]> for &'a Nul<A> {
     type Error = ();
     #[inline]
@@ -258,7 +259,7 @@ impl Display for Nul<char> {
 
 impl<A> AsRef<Nul<A>> for Nul<A> { #[inline] fn as_ref(&self) -> &Self { self } }
 
-#[derive(PartialEq, Eq, PartialOrd, Ord)]
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(transparent)]
 pub struct NulStr(Nul<u8>);
 
