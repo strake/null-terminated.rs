@@ -5,8 +5,8 @@
 #![deny(missing_debug_implementations)]
 
 #![feature(const_fn)]
+#![feature(const_raw_ptr_deref)]
 #![feature(extern_types)]
-#![feature(untagged_unions)]
 
 #![cfg_attr(test, feature(custom_attribute))]
 #![cfg_attr(test, feature(plugin))]
@@ -68,15 +68,10 @@ impl<A> Nul<A> {
     pub fn iter_mut(&mut self) -> IterMut<A> { IterMut(self.as_mut_ptr(), PhantomData) }
 
     #[inline]
-    pub const unsafe fn new_unchecked(p: *const A) -> &'static Nul<A> {
-        union U<A: 'static> { p: *const A, q: &'static Nul<A> }
-        U { p }.q
-    }
+    pub const unsafe fn new_unchecked(p: *const A) -> &'static Self { &*(p as *const Nul<A>) }
 
     #[inline]
-    pub unsafe fn new_unchecked_mut(p: *mut A) -> &'static mut Nul<A> {
-        &mut *(p as *mut Nul<A>)
-    }
+    pub unsafe fn new_unchecked_mut(p: *mut A) -> &'static mut Self { &mut *(p as *mut Nul<A>) }
 
     /// Return array length. `O(n)`
     #[inline]
@@ -181,7 +176,7 @@ impl<'a, A> TryFrom<&'a [A]> for &'a Nul<A> {
     type Error = ();
     #[inline]
     fn try_from(xs: &'a [A]) -> Result<Self, ()> {
-        if xs.last().map_or(false, is_null) { Ok(unsafe { mem::transmute(&xs[0]) }) }
+        if xs.last().map_or(false, is_null) { Ok(unsafe { &*(xs.as_ptr() as *const Nul<A>) }) }
         else { Err(()) }
     }
 }
@@ -190,7 +185,7 @@ impl<'a, A> TryFrom<&'a mut [A]> for &'a mut Nul<A> {
     type Error = ();
     #[inline]
     fn try_from(xs: &'a mut [A]) -> Result<Self, ()> {
-        if xs.last().map_or(false, is_null) { Ok(unsafe { mem::transmute(&mut xs[0]) }) }
+        if xs.last().map_or(false, is_null) { Ok(unsafe { &mut *(xs.as_mut_ptr() as *mut Nul<A>) }) }
         else { Err(()) }
     }
 }
@@ -303,10 +298,7 @@ impl IndexMut<RangeFull> for NulStr {
 
 impl NulStr {
     #[inline]
-    pub const unsafe fn new_unchecked(p: *const u8) -> &'static Self {
-        union U<A: 'static> { p: *const A, q: &'static NulStr }
-        U { p }.q
-    }
+    pub const unsafe fn new_unchecked(p: *const u8) -> &'static Self { &*(p as *mut Self) }
 
     #[inline]
     pub unsafe fn new_unchecked_mut(p: *mut u8) -> &'static mut Self { &mut *(p as *mut Self) }
