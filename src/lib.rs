@@ -389,7 +389,7 @@ fn ptr_diff<A>(p: *const A, q: *const A) -> usize {
 /// # Examples
 ///
 /// ```
-/// # #![feature(const_str_as_ptr)] #[macro_use] extern crate null_terminated; use null_terminated::Nul; fn main() {
+/// # #[macro_use] extern crate null_terminated; use null_terminated::Nul; fn main() {
 /// static s: &'static Nul<u8> = str0!("Hello, world!");
 /// # }
 /// ```
@@ -405,7 +405,7 @@ macro_rules! str0 {
 /// # Examples
 ///
 /// ```
-/// # #![feature(const_str_as_ptr)] #[macro_use] extern crate null_terminated; use null_terminated::NulStr; fn main() {
+/// # #[macro_use] extern crate null_terminated; use null_terminated::NulStr; fn main() {
 /// static s: &'static NulStr = str0_utf8!("Hello, world!");
 /// # }
 /// ```
