@@ -20,8 +20,7 @@ extern crate unreachable;
 extern crate utf;
 
 #[cfg(test)] extern crate quickcheck;
-#[cfg(test)] #[macro_use]
-             extern crate std;
+#[cfg(test)] extern crate std;
 
 use core::{cmp::*, fmt::{self, Debug, Display}, hash::{Hash, Hasher}, marker::PhantomData, mem,
            ops::*, slice};
@@ -389,7 +388,7 @@ fn ptr_diff<A>(p: *const A, q: *const A) -> usize {
 /// # Examples
 ///
 /// ```
-/// # #[macro_use] extern crate null_terminated; use null_terminated::Nul; fn main() {
+/// # extern crate null_terminated; use null_terminated::{Nul, str0}; fn main() {
 /// static s: &'static Nul<u8> = str0!("Hello, world!");
 /// # }
 /// ```
@@ -405,7 +404,7 @@ macro_rules! str0 {
 /// # Examples
 ///
 /// ```
-/// # #[macro_use] extern crate null_terminated; use null_terminated::NulStr; fn main() {
+/// # extern crate null_terminated; use null_terminated::{NulStr, str0_utf8}; fn main() {
 /// static s: &'static NulStr = str0_utf8!("Hello, world!");
 /// # }
 /// ```
