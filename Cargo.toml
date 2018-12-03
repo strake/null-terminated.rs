@@ -1,6 +1,6 @@
 [package]
 name = "null-terminated"
-version = "0.3.5"
+version = "0.3.6"
 authors = ["M Farkas-Dyck <strake888@gmail.com>"]
 description = "null-terminated arrays"
 license = "MIT OR Apache-2.0"
