@@ -272,11 +272,7 @@ impl Debug for NulStr {
 #[cfg(feature = "utf")]
 impl fmt::Display for NulStr {
     #[inline]
-    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        use fmt::Write;
-        for x in self.chars() { fmt.write_char(x)? }
-        Ok(())
-    }
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result { fmt.write_str(&self[..]) }
 }
 
 impl Index<RangeFull> for NulStr {
