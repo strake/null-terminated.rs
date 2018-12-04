@@ -310,9 +310,11 @@ impl NulStr {
     #[inline]
     pub fn as_mut_ptr(&mut self) -> *const u8 { self.0.as_mut_ptr() }
 
+    #[cfg(feature = "utf")]
     #[inline]
     pub fn chars(&self) -> Chars { Chars(::utf::decode_utf8(self.0.iter().cloned())) }
 
+    #[cfg(feature = "utf")]
     #[inline]
     pub fn char_indices(&self) -> CharIndices { CharIndices(self.chars(), 0) }
 
@@ -320,9 +322,11 @@ impl NulStr {
     pub fn is_char_boundary(&self, k: usize) -> bool { self[..].is_char_boundary(k) }
 }
 
+#[cfg(feature = "utf")]
 #[derive(Debug, Clone)]
 pub struct Chars<'a>(::utf::DecodeUtf8<::core::iter::Cloned<Iter<'a, u8>>>);
 
+#[cfg(feature = "utf")]
 impl<'a> Iterator for Chars<'a> {
     type Item = char;
     #[inline]
@@ -332,9 +336,11 @@ impl<'a> Iterator for Chars<'a> {
     }
 }
 
+#[cfg(feature = "utf")]
 #[derive(Debug, Clone)]
 pub struct CharIndices<'a>(Chars<'a>, usize);
 
+#[cfg(feature = "utf")]
 impl<'a> Iterator for CharIndices<'a> {
     type Item = (usize, char);
     #[inline]
