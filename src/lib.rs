@@ -1,4 +1,6 @@
-//! See [`Nul`](struct.Nul.html).
+//! Library of [null-terminated slices](struct.Nul.html) and
+//! [UTF-8-encoded strings](struct.NulStr.html), references to which are thin pointers for
+//! efficiency and ease of use with FFI.
 
 #![no_std]
 
@@ -260,6 +262,12 @@ impl Display for Nul<char> {
 
 impl<A> AsRef<Nul<A>> for Nul<A> { #[inline] fn as_ref(&self) -> &Self { self } }
 
+/// Null-terminated UTF-8 encoded string
+///
+/// `&NulStr` is a thin pointer, so it can be readily used with FFI.
+///
+/// One can convert from `&Nul<u8>` to `&NulStr` with `try_from`, which checks whether its
+/// argument is valid UTF-8.
 #[derive(PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(transparent)]
 pub struct NulStr(Nul<u8>);

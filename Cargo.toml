@@ -2,7 +2,7 @@
 name = "null-terminated"
 version = "0.3.6"
 authors = ["M Farkas-Dyck <strake888@gmail.com>"]
-description = "null-terminated arrays"
+description = "Library of null-terminated slices and UTF-8-encoded strings with thin references"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/strake/null-terminated.rs"
 
