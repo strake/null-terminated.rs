@@ -1,6 +1,16 @@
 //! Library of [null-terminated slices](struct.Nul.html) and
 //! [UTF-8-encoded strings](struct.NulStr.html), references to which are thin pointers for
 //! efficiency and ease of use with FFI.
+//!
+//! A likely common use case is C FFI, for example:
+//! ```
+//! extern "C" {
+//!     fn strlen(_: &Nul<u8>) -> usize;
+//!     fn strchr(_: &Nul<u8>, _: c_int) -> &Nul<u8>;
+//! }
+//! ```
+//!
+//! For further examples, see the docs of [`Nul`](struct.Nul.html).
 
 #![no_std]
 
