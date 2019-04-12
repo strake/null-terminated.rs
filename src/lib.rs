@@ -3,7 +3,8 @@
 //! efficiency and ease of use with FFI.
 //!
 //! A likely common use case is C FFI, for example:
-//! ```
+//! ```no_run
+//! # extern crate null_terminated; use null_terminated::Nul; type c_int = i32;
 //! extern "C" {
 //!     fn strlen(_: &Nul<u8>) -> usize;
 //!     fn strchr(_: &Nul<u8>, _: c_int) -> &Nul<u8>;
