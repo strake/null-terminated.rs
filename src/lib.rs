@@ -15,6 +15,7 @@
 #![no_std]
 
 #![deny(missing_debug_implementations)]
+#![deny(missing_docs)]
 
 #![feature(const_fn)]
 #![feature(const_raw_ptr_deref)]
@@ -64,9 +65,11 @@ unsafe impl Sync for Opaque {}
 pub struct Nul<A>([A; 0], Opaque);
 
 impl<A> Nul<A> {
+    /// Return a pointer to the start of the array.
     #[inline]
     pub const fn as_ptr(&self) -> *const A { self as *const Self as *const A }
 
+    /// Return a mutable pointer to the start of the array.
     #[inline]
     pub fn as_mut_ptr(&mut self) -> *mut A { self as *mut Self as *mut A }
 
@@ -78,9 +81,19 @@ impl<A> Nul<A> {
     #[inline]
     pub fn iter_mut(&mut self) -> IterMut<A> { IterMut(self.as_mut_ptr(), PhantomData) }
 
+    /// Create a reference to a null-terminated array, given a pointer to its start.
+    ///
+    /// The caller must make sure the argument does, in fact, point to a null-terminated array,
+    /// and the returned reference not live longer than the array it refers to. These
+    /// requirements are not checked.
     #[inline]
     pub const unsafe fn new_unchecked(p: *const A) -> &'static Self { &*(p as *const Nul<A>) }
 
+    /// Create a mutable reference to a null-terminated array, given a pointer to its start.
+    ///
+    /// The caller must make sure the argument does, in fact, point to a null-terminated array,
+    /// and the returned reference not live longer than the array it refers to. These
+    /// requirements are not checked.
     #[inline]
     pub unsafe fn new_unchecked_mut(p: *mut A) -> &'static mut Self { &mut *(p as *mut Nul<A>) }
 
@@ -225,6 +238,7 @@ impl<'a, A> From<IterMut<'a, A>> for &'a mut Nul<A> {
     fn from(it: IterMut<'a, A>) -> Self { unsafe { &mut *(it.0 as *mut Nul<A>) } }
 }
 
+/// Iterator over the elements of a null-terminated array
 #[derive(Debug, Clone, Copy)]
 pub struct Iter<'a, A: 'a>(*const A, PhantomData<&'a A>);
 
@@ -243,6 +257,7 @@ impl<'a, A: 'a> Iterator for Iter<'a, A> {
     } }
 }
 
+/// Iterator over the elements of a mutable null-terminated array
 #[derive(Debug)]
 pub struct IterMut<'a, A: 'a>(*mut A, PhantomData<&'a mut A>);
 
@@ -310,36 +325,54 @@ impl IndexMut<RangeFull> for NulStr {
 }
 
 impl NulStr {
+    /// Create a reference to a null-terminated string, given a pointer to its start.
+    ///
+    /// The caller must make sure the argument does, in fact, point to a null-terminated string;
+    /// the string is valid UTF-8; and the returned reference not live longer than the array it
+    /// refers to. These requirements are not checked.
     #[inline]
     pub const unsafe fn new_unchecked(p: *const u8) -> &'static Self { &*(p as *mut Self) }
 
+    /// Create a mutable reference to a null-terminated string, given a pointer to its start.
+    ///
+    /// The caller must make sure the argument does, in fact, point to a null-terminated string;
+    /// the string is valid UTF-8; and the returned reference not live longer than the array it
+    /// refers to. These requirements are not checked.
     #[inline]
     pub unsafe fn new_unchecked_mut(p: *mut u8) -> &'static mut Self { &mut *(p as *mut Self) }
 
+    /// Return a slice of the UTF-8 code bytes of the string.
     #[inline]
     pub fn as_bytes(&self) -> &Nul<u8> { &self.0 }
 
+    /// Return a mutable slice of the UTF-8 code bytes of the string.
     #[inline]
     pub fn as_bytes_mut(&mut self) -> &mut Nul<u8> { &mut self.0 }
 
+    /// Return a pointer to the start of the string.
     #[inline]
     pub fn as_ptr(&self) -> *const u8 { self.0.as_ptr() }
 
+    /// Return a mutable pointer to the start of the string.
     #[inline]
     pub fn as_mut_ptr(&mut self) -> *const u8 { self.0.as_mut_ptr() }
 
+    /// Iterate over the characters of the string.
     #[cfg(feature = "utf")]
     #[inline]
     pub fn chars(&self) -> Chars { Chars(::utf::decode_utf8(self.0.iter().cloned())) }
 
+    /// Iterate over the characters of the string and their byte positions.
     #[cfg(feature = "utf")]
     #[inline]
     pub fn char_indices(&self) -> CharIndices { CharIndices(self.chars(), 0) }
 
+    /// Return whether the given byte position is a character boundary.
     #[inline]
     pub fn is_char_boundary(&self, k: usize) -> bool { self[..].is_char_boundary(k) }
 }
 
+/// Iterator over the characters of a null-terminated string
 #[cfg(feature = "utf")]
 #[derive(Debug, Clone)]
 pub struct Chars<'a>(::utf::DecodeUtf8<::core::iter::Cloned<Iter<'a, u8>>>);
@@ -354,6 +387,7 @@ impl<'a> Iterator for Chars<'a> {
     }
 }
 
+/// Iterator over the characters of a null-terminated string and their byte positions
 #[cfg(feature = "utf")]
 #[derive(Debug, Clone)]
 pub struct CharIndices<'a>(Chars<'a>, usize);
