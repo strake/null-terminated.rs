@@ -26,11 +26,6 @@
 #![feature(const_raw_ptr_deref)]
 #![feature(extern_types)]
 
-#![cfg_attr(test, feature(custom_attribute))]
-#![cfg_attr(test, feature(plugin))]
-
-#![cfg_attr(test, plugin(quickcheck_macros))]
-
 extern crate fallible;
 extern crate unreachable;
 
@@ -38,6 +33,8 @@ extern crate unreachable;
 extern crate utf;
 
 #[cfg(test)] extern crate quickcheck;
+
+#[cfg(test)] #[macro_use] extern crate quickcheck_macros;
 #[cfg(test)] extern crate std;
 
 use core::{cmp::*, fmt::{self, Debug, Display}, hash::{Hash, Hasher}, marker::PhantomData, mem,
@@ -472,6 +469,52 @@ macro_rules! str0_utf8 {
     ($s:expr) => (unsafe {
         $crate::NulStr::new_unchecked(concat!($s, "\0").as_ptr() as *mut _)
     })
+}
+
+
+#[doc(hidden)]
+pub mod __nur_reexports{
+    pub use core::option::Option::{None,Some};
+}
+
+#[doc(hidden)]
+pub const unsafe fn new_nul_ref_from_slice<'a, 'b, T: ?Sized>(
+    slice: &'a [Option<&'b T>],
+) -> &'a Nul<&'b T> {
+    &*(slice.as_ptr() as *const Option<&T> as *const Nul<&'b T>)
+}
+
+/// Constructs a `&Nul<&T>`.
+///
+/// # Examples
+///
+/// ```
+/// # extern crate null_terminated;
+/// # use null_terminated::{Nul,NulStr,nul_of_ref,str0_utf8};
+///
+/// static INTS: &Nul<&u32> = nul_of_ref![&0, &1, &2, &3];
+/// static STRS: &Nul<&NulStr> =
+///     nul_of_ref![str0_utf8!("foo"), str0_utf8!("bar"), str0_utf8!("baz")];
+///
+/// # fn main() {
+/// assert_eq!( INTS[..], [&0, &1, &2, &3] );
+/// assert_eq!( STRS[..], [str0_utf8!("foo"), str0_utf8!("bar"), str0_utf8!("baz")] );
+/// # }
+/// ```
+///
+#[macro_export]
+macro_rules! nul_of_ref {
+    (
+        $($reference:expr),*
+        $(,)?
+    ) => (
+        unsafe {
+            $crate::new_nul_ref_from_slice(&[
+                $($crate::__nur_reexports::Some($reference),)* 
+                $crate::__nur_reexports::None
+            ])
+        }
+    )
 }
 
 #[cfg(test)]
