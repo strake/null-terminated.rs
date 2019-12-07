@@ -285,7 +285,7 @@ impl Display for Nul<char> {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         use fmt::Write;
-        for &x in self { try!(f.write_char(x)); }
+        for &x in self { f.write_char(x)?; }
         Ok(())
     }
 }
@@ -495,15 +495,10 @@ macro_rules! str0_utf8 {
 ///
 #[macro_export]
 macro_rules! nul_of_ref {
-    (
-        $($reference:expr),*
-        $(,)?
-    ) => (
-        unsafe {
-            enum Opt<T> { Nil, Just(T) }
-            $crate::cast($crate::Nul::new_unchecked(&[$(Opt::Just($reference),)* Opt::Nil]))
-        }
-    )
+    ($($reference:expr),* $(,)?) => (unsafe {
+        enum Opt<T> { Nil, Just(T) }
+        $crate::cast($crate::Nul::new_unchecked(&[$(Opt::Just($reference),)* Opt::Nil]))
+    })
 }
 
 #[cfg(test)]
