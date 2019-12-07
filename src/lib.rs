@@ -154,6 +154,9 @@ impl<A> Nul<A> {
     }
 }
 
+/// Cast.
+pub const unsafe fn cast<A, B>(a: &Nul<A>) -> &Nul<B> { &*(a as *const Nul<A> as *const Nul<B>) }
+
 impl<A, I> Index<I> for Nul<A> where [A]: Index<I> {
     type Output = <[A] as Index<I>>::Output;
     #[inline]
@@ -472,18 +475,6 @@ macro_rules! str0_utf8 {
 }
 
 
-#[doc(hidden)]
-pub mod __nur_reexports{
-    pub use core::option::Option::{None,Some};
-}
-
-#[doc(hidden)]
-pub const unsafe fn new_nul_ref_from_slice<'a, 'b, T: ?Sized>(
-    slice: &'a [Option<&'b T>],
-) -> &'a Nul<&'b T> {
-    &*(slice.as_ptr() as *const Option<&T> as *const Nul<&'b T>)
-}
-
 /// Constructs a `&Nul<&T>`.
 ///
 /// # Examples
@@ -509,10 +500,8 @@ macro_rules! nul_of_ref {
         $(,)?
     ) => (
         unsafe {
-            $crate::new_nul_ref_from_slice(&[
-                $($crate::__nur_reexports::Some($reference),)* 
-                $crate::__nur_reexports::None
-            ])
+            enum Opt<T> { Nil, Just(T) }
+            $crate::cast($crate::Nul::new_unchecked(&[$(Opt::Just($reference),)* Opt::Nil]))
         }
     )
 }
