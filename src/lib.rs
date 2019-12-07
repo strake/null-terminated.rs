@@ -26,11 +26,6 @@
 #![feature(const_raw_ptr_deref)]
 #![feature(extern_types)]
 
-#![cfg_attr(test, feature(custom_attribute))]
-#![cfg_attr(test, feature(plugin))]
-
-#![cfg_attr(test, plugin(quickcheck_macros))]
-
 extern crate fallible;
 extern crate unreachable;
 
@@ -38,6 +33,8 @@ extern crate unreachable;
 extern crate utf;
 
 #[cfg(test)] extern crate quickcheck;
+
+#[cfg(test)] #[macro_use] extern crate quickcheck_macros;
 #[cfg(test)] extern crate std;
 
 use core::{cmp::*, fmt::{self, Debug, Display}, hash::{Hash, Hasher}, marker::PhantomData, mem,
@@ -156,6 +153,9 @@ impl<A> Nul<A> {
         Some(unsafe { (slice::from_raw_parts_mut(p, i), <&mut Self>::from(it)) })
     }
 }
+
+/// Cast.
+pub const unsafe fn cast<A, B>(a: &Nul<A>) -> &Nul<B> { &*(a as *const Nul<A> as *const Nul<B>) }
 
 impl<A, I> Index<I> for Nul<A> where [A]: Index<I> {
     type Output = <[A] as Index<I>>::Output;
@@ -472,6 +472,38 @@ macro_rules! str0_utf8 {
     ($s:expr) => (unsafe {
         $crate::NulStr::new_unchecked(concat!($s, "\0").as_ptr() as *mut _)
     })
+}
+
+
+/// Constructs a `&Nul<&T>`.
+///
+/// # Examples
+///
+/// ```
+/// # extern crate null_terminated;
+/// # use null_terminated::{Nul,NulStr,nul_of_ref,str0_utf8};
+///
+/// static INTS: &Nul<&u32> = nul_of_ref![&0, &1, &2, &3];
+/// static STRS: &Nul<&NulStr> =
+///     nul_of_ref![str0_utf8!("foo"), str0_utf8!("bar"), str0_utf8!("baz")];
+///
+/// # fn main() {
+/// assert_eq!( INTS[..], [&0, &1, &2, &3] );
+/// assert_eq!( STRS[..], [str0_utf8!("foo"), str0_utf8!("bar"), str0_utf8!("baz")] );
+/// # }
+/// ```
+///
+#[macro_export]
+macro_rules! nul_of_ref {
+    (
+        $($reference:expr),*
+        $(,)?
+    ) => (
+        unsafe {
+            enum Opt<T> { Nil, Just(T) }
+            $crate::cast($crate::Nul::new_unchecked(&[$(Opt::Just($reference),)* Opt::Nil]))
+        }
+    )
 }
 
 #[cfg(test)]
