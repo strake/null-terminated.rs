@@ -497,9 +497,29 @@ macro_rules! str0_utf8 {
 macro_rules! nul_of_ref {
     ($($reference:expr),* $(,)?) => (unsafe {
         enum Opt<T> { Nil, Just(T) }
-        $crate::cast($crate::Nul::new_unchecked(&[$(Opt::Just($reference),)* Opt::Nil]))
+        #[inline(always)]
+        const unsafe fn cast_helper<'a, 'b, A: ?Sized>(a: &'b Nul<Opt<&'a A>>) -> &'b Nul<&'a A> { $crate::cast(a) }
+        cast_helper($crate::Nul::new_unchecked([$(Opt::Just($reference),)* Opt::Nil].as_ptr()))
     })
 }
+
+/// ```compile_fail
+/// # extern crate null_terminated;
+/// # use null_terminated::{Nul,nul_of_ref};
+/// static VOIDS: &Nul<&std::convert::Infallible> = nul_of_ref![&()];
+/// ```
+/// ```compile_fail
+/// # extern crate null_terminated;
+/// # use null_terminated::{Nul,nul_of_ref};
+/// static VOIDS: &Nul<&std::convert::Infallible> = nul_of_ref![&0usize];
+/// ```
+/// ```compile_fail
+/// # extern crate null_terminated;
+/// # use null_terminated::{Nul,nul_of_ref};
+/// static BOOLS: &Nul<&bool> = nul_of_ref![&()];
+/// ```
+#[cfg(doctest)]
+pub struct NoNulOfRefInvalid;
 
 #[cfg(test)]
 mod tests {
