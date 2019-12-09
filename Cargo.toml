@@ -1,6 +1,6 @@
 [package]
 name = "null-terminated"
-version = "0.3.13"
+version = "0.3.14"
 authors = ["M Farkas-Dyck <strake888@gmail.com>"]
 description = "Library of null-terminated slices and UTF-8-encoded strings with thin references"
 license = "MIT OR Apache-2.0"
