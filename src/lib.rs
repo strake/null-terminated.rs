@@ -27,7 +27,6 @@
 #![feature(const_raw_ptr_deref)]
 #![feature(extern_types)]
 
-extern crate fallible;
 extern crate unreachable;
 
 #[cfg(feature = "utf")]
@@ -38,9 +37,8 @@ extern crate utf;
 #[cfg(test)] #[macro_use] extern crate quickcheck_macros;
 #[cfg(test)] extern crate std;
 
-use core::{cmp::*, fmt::{self, Debug, Display}, hash::{Hash, Hasher}, marker::PhantomData, mem,
-           ops::*, slice};
-use fallible::*;
+use core::{cmp::*, convert::TryFrom, fmt::{self, Debug, Display}, hash::{Hash, Hasher},
+           marker::PhantomData, mem, ops::*, slice};
 
 extern { type Opaque; }
 unsafe impl Send for Opaque {}
@@ -52,15 +50,15 @@ unsafe impl Sync for Opaque {}
 ///
 /// # Examples
 ///
-/// One can safely take views of null-terminated slices with [`TryFrom::try_from`](../fallible/trait.TryFrom.html#tymethod.try_from):
+/// One can safely take views of null-terminated slices with [`TryFrom::try_from`](https://doc.rust-lang.org/core/convert/trait.TryFrom.html#tymethod.try_from):
 /// ```
-/// # extern crate fallible; extern crate null_terminated; use null_terminated::Nul;
+/// # extern crate null_terminated; use null_terminated::Nul;
 /// extern "C" {
 ///     fn c_f(path: *const u8) -> i32;
 /// }
 ///
 /// fn f(path: &[u8]) -> Result<i32, ()> {
-///     <&Nul<u8> as ::fallible::TryFrom<_>>::try_from(path)
+///     <&Nul<u8> as ::std::convert::TryFrom<_>>::try_from(path)
 ///         .map(|path| unsafe { c_f(path.as_ptr()) })
 /// }
 /// ```
