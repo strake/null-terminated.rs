@@ -22,6 +22,7 @@
 #![deny(missing_debug_implementations)]
 #![deny(missing_docs)]
 
+#![feature(cfg_doctest)]
 #![feature(const_fn)]
 #![feature(const_raw_ptr_deref)]
 #![feature(extern_types)]
