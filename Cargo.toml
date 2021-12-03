@@ -8,6 +8,7 @@ repository = "https://github.com/strake/null-terminated.rs"
 readme = "README.md"
 
 [dependencies]
+byte-strings-proc_macros = "0.2.1"
 unreachable = "1"
 utf = { version = "0.1", optional = true }
 

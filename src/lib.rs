@@ -35,6 +35,9 @@ extern crate utf;
 #[cfg(test)] #[macro_use] extern crate quickcheck_macros;
 #[cfg(test)] extern crate std;
 
+#[doc(hidden)]
+pub extern crate byte_strings_proc_macros as __byte_strings;
+
 use core::{cmp::*, convert::TryFrom, fmt::{self, Debug, Display}, hash::{Hash, Hasher},
            marker::PhantomData, mem, ops::*, slice};
 
@@ -451,7 +454,7 @@ fn ptr_diff<A>(p: *const A, q: *const A) -> usize {
 #[macro_export]
 macro_rules! str0 {
     ($s:expr) => (unsafe {
-        $crate::Nul::<u8>::new_unchecked(concat!($s, "\0").as_ptr() as *mut _)
+        $crate::Nul::<u8>::new_unchecked($crate::__byte_strings::concat_bytes!([$crate] $s, "\0").as_ptr() as *mut _)
     })
 }
 
