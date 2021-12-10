@@ -336,7 +336,7 @@ impl NulStr {
     /// the string is valid UTF-8; and the returned reference not live longer than the array it
     /// refers to. These requirements are not checked.
     #[inline]
-    pub const unsafe fn new_unchecked(p: *const u8) -> &'static Self { &*(p as *mut Self) }
+    pub const unsafe fn new_unchecked(p: *const u8) -> &'static Self { &*(p as *const Self) }
 
     /// Create a mutable reference to a null-terminated string, given a pointer to its start.
     ///
